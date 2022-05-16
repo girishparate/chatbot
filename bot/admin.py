@@ -6,6 +6,6 @@ class AnswerAdmin(admin.StackedInline):
 
 class QuestionAdmin(admin.ModelAdmin):
     inlines = [AnswerAdmin]
-    list_display = ['user_question']
+    list_display = ['user_question', 'keyword']
 
 admin.site.register(Question, QuestionAdmin)
