@@ -97,11 +97,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message': message
         }))
 
-    @database_sync_to_async
-    def save_question(self, message):
-        question = Question.objects.create(user_question=message)
-        question.save()
-        return 0
+    # @database_sync_to_async
+    # def save_question(self, message):
+    #     question = Question.objects.create(user_question=message)
+    #     question.save()
+    #     return 0
     
     @database_sync_to_async
     def answer_question(self, message):
@@ -113,11 +113,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         for i in kwords:
             datas = re.sub(r'[^\w]', '', i)
             questiond = Question.objects.filter(keyword__contains=datas)
-            for ique in questiond:
-                data_anw = Answer.objects.filter(question=ique).values('answer', 'id')
-                for anse in data_anw:
-                    strn += '<div id='+str(anse['id'])+'>'+str(anse['answer'])+'</div><br>'
-        
+            if len(questiond) > 0:
+                for ique in questiond:
+                    data_anw = Answer.objects.filter(question=ique).values('answer', 'id')
+                    for anse in data_anw:
+                        strn += '<div id='+str(anse['id'])+'>'+str(anse['answer'])+'</div><br>'
+            else:
+                strn += '<div>Answer yet to found out</div>'
+                kw_new_question = ','.join(a)
+                Question(user_question=message, keyword=kw_new_question).save()  
         strn += '</div>'
         event = {'message': strn}
         text_data_json = json.loads(json.dumps(event))
