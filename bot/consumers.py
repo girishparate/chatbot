@@ -35,7 +35,7 @@ def transform_message(message):
     message_clean = list(message_not_punc.split(" "))
     while i <= len(message_clean):
         for mess in message_clean:
-            if mess.lower()  in stopwords.words('english'):
+            if mess.lower() in stopwords.words('english'):
                 message_clean.remove(mess)
         i =i +1
     return  message_clean
@@ -106,8 +106,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def answer_question(self, message):
         a=transform_message(message)
+      
         
-        kwords = [i.lower() for i in a.message_clean.split()]
+        kwords = [i.lower() for i in a]
         strn = '<div>'
         for i in kwords:
             datas = re.sub(r'[^\w]', '', i)
