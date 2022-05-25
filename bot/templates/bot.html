@@ -10,19 +10,34 @@
 <body>
     <div id="chat-log"></div><br>
     <input id="chat-message-input" type="text" size="100"><br>
+    <div>
+        <button class="chat_type" onclick="set_socket(this,'faq')">FAQ</button>
+        <button class="chat_type" onclick="set_socket(this,'custom')">CUSTOM</button>
+    </div>
     <input id="chat-message-submit" type="button" value="Send"> {{ room_name|json_script:"room-name" }}
     <script>
         const roomName = JSON.parse(document.getElementById('room-name').textContent);
-
-        const chatSocket = new WebSocket(
-            'ws://' +
-            window.location.host +
-            '/ws/bot/' +
-            roomName +
-            '/'
-        );
-
-        chatSocket.onmessage = function(e) {
+        function set_socket(obj,chat_type){
+            if(chat_type=="faq"){
+                console.log("faq")
+                chatSocket = new WebSocket(
+                    'ws://' +
+                    window.location.host +
+                    '/ws/bot/faq/' +
+                    roomName +
+                    '/'
+                );
+            }else{
+                console.log("custom")
+                chatSocket = new WebSocket(
+                    'ws://' +
+                    window.location.host +
+                    '/ws/bot/custom/' +
+                    roomName +
+                    '/'
+                );
+            }
+            chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             document.querySelector('#chat-log').innerHTML += ('<br>'+data.message + '\n');
         };
@@ -46,6 +61,8 @@
             }));
             messageInputDom.value = '';
         };
+        }
+        
     </script>
 </body>
 

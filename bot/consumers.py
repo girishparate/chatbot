@@ -21,6 +21,7 @@ from nltk.corpus import stopwords
 # from sklearn.model_selection import GridSearchCV
 
 
+'''This is frequently asked question logic'''
 def transform_message(message):
     message_not_punc = [] # Message without punctuation
     i = 0
@@ -40,7 +41,7 @@ def transform_message(message):
         i =i +1
     return  message_clean
 
-class ChatConsumer(AsyncWebsocketConsumer):
+class ChatFaqConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = 'chatbot'
         self.user = self.scope["user"]
@@ -97,12 +98,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message': message
         }))
 
-    # @database_sync_to_async
-    # def save_question(self, message):
-    #     question = Question.objects.create(user_question=message)
-    #     question.save()
-    #     return 0
-    
     @database_sync_to_async
     def answer_question(self, message):
         a=transform_message(message)
@@ -134,3 +129,88 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
         return 0
+
+
+'''This is custom (rule based question) logic'''
+class ChatCustomConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = 'chatbot'
+        self.user = self.scope["user"]
+        print(self.user.id)
+        self.room_group_name = 'chat_%s' % self.room_name
+
+        # Join room group
+        await(self.channel_layer.group_add)(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        await(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': "Hello, "+str(self.user)
+            }
+        )
+        
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await(self.channel_layer.group_discard)(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        # Send message to room group
+        await(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message
+            }
+        )
+
+        if self.scope['user'].username:
+            # await self.save_question(message)
+            await self.answer_question(message)
+        else:
+            pass
+        
+    # Receive message from room group
+    async def chat_message(self, event):
+        message = event['message']
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'message': message
+        }))
+
+    @database_sync_to_async
+    def answer_question(self, message):
+        strn = ''
+
+        if message == 'report':
+            response_report = self.report_btn()
+            print(response_report)
+        else:
+            print("not")
+        event = {'message': strn}
+        text_data_json = json.loads(json.dumps(event))
+        message = text_data_json['message']
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message
+            }
+        )
+        return 0
+
+    
+    def report_btn(self):
+        return ("get user info")
